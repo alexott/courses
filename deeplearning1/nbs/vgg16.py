@@ -42,11 +42,11 @@ class Vgg16():
     """
 
 
-    def __init__(self):
+    def __init__(self, batch_size = 64):
         self.FILE_PATH = 'http://files.fast.ai/models/'
         self.create()
         self.get_classes()
-        self.batch_size = 64
+        self.batch_size = batch_size
 
 
     def get_classes(self):
@@ -140,15 +140,14 @@ class Vgg16():
         model.load_weights(get_file(fname, self.FILE_PATH+fname, cache_subdir='models'))
 
 
-    def get_batches(self, path, gen=image.ImageDataGenerator(), shuffle=True, batch_size=8, class_mode='categorical'):
+    def get_batches(self, path, gen=image.ImageDataGenerator(), shuffle=True, class_mode='categorical'):
         """
             Takes the path to a directory, and generates batches of augmented/normalized data. Yields batches indefinitely, in an infinite loop.
 
             See Keras documentation: https://keras.io/preprocessing/image/
         """
-        self.batch_size = batch_size
         return gen.flow_from_directory(path, target_size=(224,224),
-                class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
+                class_mode=class_mode, shuffle=shuffle, batch_size=self.batch_size)
 
 
     def ft(self, num):
@@ -197,13 +196,13 @@ class Vgg16():
                 loss='categorical_crossentropy', metrics=['accuracy'])
 
 
-    def fit_data(self, trn, labels,  val, val_labels,  nb_epoch=1, batch_size=64):
+    def fit_data(self, trn, labels,  val, val_labels,  nb_epoch=1):
         """
             Trains the model for a fixed number of epochs (iterations on a dataset).
             See Keras documentation: https://keras.io/models/model/
         """
-        self.model.fit(trn, labels, nb_epoch=nb_epoch,
-                validation_data=(val, val_labels), batch_size=batch_size)
+        self.model.fit(trn, labels, epochs=nb_epoch,
+                validation_data=(val, val_labels), batch_size=self.batch_size)
 
 
     def fit(self, batches, val_batches, nb_epoch=1):
@@ -216,7 +215,7 @@ class Vgg16():
                                  validation_steps=val_batches.samples / self.batch_size)
 
 
-    def test(self, path, batch_size=8):
+    def test(self, path):
         """
             Predicts the classes using the trained model on data yielded batch-by-batch.
 
@@ -229,6 +228,6 @@ class Vgg16():
                 test_batches, numpy array(s) of predictions for the test_batches.
     
         """
-        test_batches = self.get_batches(path, shuffle=False, batch_size=batch_size, class_mode=None)
+        test_batches = self.get_batches(path, shuffle=False, batch_size=self.batch_size, class_mode=None)
         return test_batches, self.model.predict_generator(test_batches, test_batches.samples)
 
